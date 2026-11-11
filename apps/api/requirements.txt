@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pyjwt
+python-multipart
+pydantic
+numpy
+scipy
+soundfile
