@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.next/
+
+# Environment & secrets — NEVER commit
+.env
+.env.*
+!.env.example
+keys.json
+*.pem
+*.key
+
+# Data — datasets and audio are never committed (privacy + size)
+data/raw/*
+data/processed/*
+data/synthetic/*
+!data/*/.gitkeep
+*.wav
+*.mp3
+*.flac
+*.m4a
+
+# Models — artefacts live in the model registry, not git
+models/
+*.onnx
+*.pt
+*.pth
+*.ckpt
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Logs & temp
+*.log
+tmp/
