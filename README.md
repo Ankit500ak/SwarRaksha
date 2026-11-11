@@ -19,7 +19,21 @@ Scammers now clone a family member's voice from a few seconds of social-media au
 
 ## Status
 
-🚧 In active development. The complete production plan — architecture, ML pipeline, data strategy, API design, milestones — lives in **[PLAN.md](PLAN.md)**.
+🚧 MVP built and running locally (Nov 2026). The complete production plan — architecture, ML pipeline, data strategy, API design, milestones — lives in **[PLAN.md](PLAN.md)**.
+
+**Honest build note:** the shipped detector is `baseline-heuristic-v0` — an *untrained* rule-based scorer over acoustic features, and speaker verification is an MFCC-statistics baseline. They wire the full product end-to-end and are documented, with limits, in **[services/ml-inference/MODEL_CARD.md](services/ml-inference/MODEL_CARD.md)**. No benchmark accuracy is claimed. The trained AASIST + ECAPA-TDNN models are the roadmap in PLAN.md §6.
+
+## Run it locally
+
+```bash
+make setup   # one-time: python venv + web dependencies
+make dev     # API on http://localhost:8000, web on http://localhost:5173
+make test    # pytest suite (fusion unit tests + API end-to-end)
+```
+
+Sign-in is email-OTP; in this local dev mode (`SWAR_DEV_MODE=1`) the code is printed in the API server log — never in an API response. Full stack via Docker: `infra/docker/docker-compose.yml`.
+
+Layout: `apps/api` (FastAPI) · `apps/web` (React+Vite+TS) · `services/ml-inference` (detector, importable package + standalone HTTP service) · `services/voiceprint` (speaker embedding baseline) · `tests/` · `infra/docker/`.
 
 ## Planned stack
 

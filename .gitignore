@@ -43,3 +43,6 @@ models/
 # Logs & temp
 *.log
 tmp/
+
+# Local databases
+*.db
