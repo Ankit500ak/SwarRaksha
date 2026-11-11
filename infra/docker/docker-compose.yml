@@ -1,0 +1,56 @@
+# SwarRaksha full stack (PLAN.md Section 10).
+# Local development usually runs faster via `make dev` at the repo root;
+# this compose file is the production-shaped topology: Postgres + API +
+# ML inference service + web.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: swarraksha
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-swarraksha-dev}
+      POSTGRES_DB: swarraksha
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swarraksha"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ml:
+    build:
+      context: ../../services/ml-inference
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql+psycopg://swarraksha:${POSTGRES_PASSWORD:-swarraksha-dev}@db:5432/swarraksha
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-in-production}
+      SWAR_DEV_MODE: "${SWAR_DEV_MODE:-0}"
+      VOICEPRINT_THRESHOLD: "${VOICEPRINT_THRESHOLD:-0.80}"
+    depends_on:
+      db:
+        condition: service_healthy
+      ml:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ../../apps/web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
+
+volumes:
+  pgdata:

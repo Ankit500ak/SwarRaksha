@@ -1,0 +1,12 @@
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libsndfile1 && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY services/ml-inference/requirements.txt /app/ml-req.txt
+COPY services/voiceprint/requirements.txt /app/vp-req.txt
+COPY apps/api/requirements.txt /app/api-req.txt
+RUN pip install --no-cache-dir -r /app/ml-req.txt -r /app/vp-req.txt -r /app/api-req.txt "psycopg[binary]"
+COPY services/ml-inference/ml_inference /app/ml_inference
+COPY services/voiceprint/voiceprint /app/voiceprint
+COPY apps/api/app /app/app
+ENV PYTHONPATH=/app
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
