@@ -12,6 +12,7 @@ from voiceprint import cosine, embed, from_bytes
 
 from . import models
 from .config import VOICEPRINT_THRESHOLD
+from .encryption import decrypt_embedding
 from .fusion import fuse
 
 
@@ -29,7 +30,7 @@ def run_analysis(db: Session, check: models.Check, samples: np.ndarray,
     if voiceprint is not None:
         # Verify against up to the first 60 s of audio.
         emb = embed(samples[:60 * sr], sr)
-        similarity = round(cosine(from_bytes(voiceprint.embedding), emb), 4)
+        similarity = round(cosine(from_bytes(decrypt_embedding(voiceprint.embedding)), emb), 4)
         check.voiceprint_similarity = similarity
 
     scores = [w["spoof_score"] for w in result["windows"]]
