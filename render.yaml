@@ -1,0 +1,66 @@
+# SwarRaksha — Render blueprint for the API (PLAN.md §10).
+#
+# The API is a single Docker service: infra/docker/Dockerfile.api copies
+# the API app PLUS the ml_inference and voiceprint packages into one
+# image (the API imports them in-process), so no separate ML service is
+# needed on Render — the same detector also runs standalone over HTTP in
+# the docker-compose stack, but Render deploys the in-process topology.
+#
+# The web frontend is deployed separately on Vercel (see
+# docs/deployment.md); this blueprint does not create it.
+#
+# All secret values use sync: false — Render prompts for them at
+# blueprint creation and never reads them from this file or from git.
+# Full operator instructions: docs/deployment.md.
+
+services:
+  - type: web
+    name: swarraksha-api
+    runtime: docker
+    dockerfilePath: ./infra/docker/Dockerfile.api
+    dockerContext: .
+    # Free web services spin down when idle (~50s+ cold start) and are
+    # fine for a demo; use starter for anything real users depend on.
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: SWAR_ENV
+        value: production
+      - key: SWAR_DEV_MODE
+        # Production must be 0: OTPs go out by email, never to logs.
+        value: "0"
+      - key: VOICEPRINT_THRESHOLD
+        value: "0.80"
+      # --- Secrets / operator-supplied (no values in git) ---
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        # Point this at the managed Postgres below (or any Postgres).
+        # IMPORTANT: use the SQLAlchemy driver form
+        #   postgresql+psycopg://user:password@host:5432/dbname
+        # Render's raw connection string has no "+psycopg" — edit it.
+        sync: false
+      - key: VOICEPRINT_ENC_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        # Comma-separated list, e.g. the Vercel production domain.
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+
+databases:
+  # Managed Postgres (PLAN.md §10). Free databases expire after a trial
+  # window on Render — pick a paid plan before relying on it for real
+  # users, and enable daily backups (see docs/deployment.md).
+  - name: swarraksha-db
+    plan: free
+    databaseName: swarraksha
+    user: swarraksha
