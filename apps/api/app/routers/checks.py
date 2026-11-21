@@ -13,9 +13,11 @@ from voiceprint import cosine, embed, from_bytes
 from .. import models
 from ..analysis import check_to_dict, refusion, run_analysis, _raise_alerts
 from ..auth import get_current_user
-from ..config import MAX_CLIP_SECONDS, MAX_UPLOAD_BYTES, VOICEPRINT_THRESHOLD
+from ..config import MAX_CLIP_SECONDS
 from ..db import get_db
+from ..encryption import decrypt_embedding
 from ..fusion import fuse
+from ..uploads import validate_audio
 import json
 
 router = APIRouter(prefix="/checks", tags=["checks"])
@@ -47,13 +49,12 @@ def _get_vp(db: Session, user: models.User, vp_id: int | None) -> models.Voicepr
 
 async def _decode(file: UploadFile):
     data = await file.read()
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(413, "Audio too large")
+    validate_audio(data, file.filename)
     try:
         samples, sr = load_audio(data, file.filename or "audio.wav")
     except Exception:
         raise HTTPException(400, "Could not decode audio")
-    max_len = MAX_CLIP_SECONDS * sr
+    max_len = int(MAX_CLIP_SECONDS * sr)
     return samples[:max_len], sr
 
 
@@ -151,7 +152,7 @@ async def live_finish(check_id: int,
         vp = db.get(models.Voiceprint, check.voiceprint_id)
         samples, sr = await _decode(file)
         emb = embed(samples[:60 * sr], sr)
-        similarity = round(cosine(from_bytes(vp.embedding), emb), 4)
+        similarity = round(cosine(from_bytes(decrypt_embedding(vp.embedding)), emb), 4)
         check.voiceprint_similarity = similarity
     scores = [w.spoof_score for w in sorted(check.windows, key=lambda x: x.idx)]
     fusion = fuse(scores, similarity, VOICEPRINT_THRESHOLD)

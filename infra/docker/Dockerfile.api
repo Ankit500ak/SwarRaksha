@@ -1,12 +1,45 @@
+# SwarRaksha API image.
+#
+# Build context MUST be the repo root (see docker-compose.yml): the API
+# imports the ML and voiceprint packages directly
+#   apps/api/app/main.py:       from ml_inference import MODEL_VERSION
+#   apps/api/app/analysis.py:   from ml_inference import analyze
+#                               from voiceprint import cosine, embed, ...
+#   apps/api/app/routers/*.py:  same ml_inference / voiceprint imports
+# so this image copies all three packages flat into /app and sets
+# PYTHONPATH=/app, which puts `app`, `ml_inference` and `voiceprint`
+# on the import path exactly as the local PYTHONPATH layout does
+# (services/ml-inference:services/voiceprint:apps/api).
 FROM python:3.12-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libsndfile1 && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
+
+# Requirements of all three packages the API process loads, plus the
+# Postgres driver (the API requirements list itself is database-agnostic).
 COPY services/ml-inference/requirements.txt /app/ml-req.txt
 COPY services/voiceprint/requirements.txt /app/vp-req.txt
 COPY apps/api/requirements.txt /app/api-req.txt
-RUN pip install --no-cache-dir -r /app/ml-req.txt -r /app/vp-req.txt -r /app/api-req.txt "psycopg[binary]"
+RUN pip install --no-cache-dir -r /app/ml-req.txt -r /app/vp-req.txt -r /app/api-req.txt "psycopg[binary]" \
+    && rm /app/ml-req.txt /app/vp-req.txt /app/api-req.txt
+
 COPY services/ml-inference/ml_inference /app/ml_inference
 COPY services/voiceprint/voiceprint /app/voiceprint
 COPY apps/api/app /app/app
-ENV PYTHONPATH=/app
+
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Run as a non-root user.
+RUN useradd --create-home --uid 10001 swar && chown -R swar:swar /app
+USER swar
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

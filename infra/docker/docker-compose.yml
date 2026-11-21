@@ -1,56 +1,146 @@
-# SwarRaksha full stack (PLAN.md Section 10).
+# SwarRaksha full stack (PLAN.md §10).
+#
 # Local development usually runs faster via `make dev` at the repo root;
-# this compose file is the production-shaped topology: Postgres + API +
-# ML inference service + web.
+# this compose file is the production-shaped topology:
+#   Postgres + Redis + API (ML + voiceprint imported in-process) + ML
+#   inference HTTP service + web.
+#
+# Voiceprint is NOT a separate container: services/voiceprint is a Python
+# library (no HTTP app). The API imports it directly — see Dockerfile.api,
+# which copies ml_inference, voiceprint and the API app into one image so
+# the API's `from ml_inference import ...` / `from voiceprint import ...`
+# imports resolve with PYTHONPATH=/app.
+#
+# Secrets come from the environment / the repo-root .env file only —
+# nothing secret is hardcoded here. POSTGRES_PASSWORD and JWT_SECRET are
+# REQUIRED: compose refuses to start without them.
+#   cp .env.example .env   # then set real values; never commit .env
+#
+# VALIDATION NOTE (honest): Docker is not installed on the dev VM this
+# file was edited on, so `docker compose config` / `up -d` have NOT been
+# run. The file was validated with a Python YAML parse and manual review
+# only. See docs/deployment.md ("What remains unverified without Docker").
+
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: swarraksha
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-swarraksha-dev}
-      POSTGRES_DB: swarraksha
+      POSTGRES_USER: "${POSTGRES_USER:-swarraksha}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}"
+      POSTGRES_DB: "${POSTGRES_DB:-swarraksha}"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U swarraksha"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-swarraksha} -d ${POSTGRES_DB:-swarraksha}"]
       interval: 5s
       timeout: 3s
       retries: 10
+      start_period: 10s
+    networks: [swarnet]
+    # No host port by default: the database is internal to the stack.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Redis is provisioned for sessions / stream state / rate limits
+    # (PLAN.md §5). NOTE: the current API code does not read REDIS_URL
+    # yet — this service is topology-ready, not yet load-bearing.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks: [swarnet]
 
   ml:
     build:
       context: ../../services/ml-inference
       dockerfile: Dockerfile
+    restart: unless-stopped
+    # Standalone HTTP front for the same detector the API imports
+    # in-process (PLAN.md §5). Bound to localhost on the host only.
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    networks: [swarnet]
 
   api:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.api
+    restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+psycopg://swarraksha:${POSTGRES_PASSWORD:-swarraksha-dev}@db:5432/swarraksha
-      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-in-production}
+      # Built from the Postgres settings above so there is one source of
+      # truth inside the compose stack. (Hosted deploys such as Render set
+      # DATABASE_URL directly on the service instead — see render.yaml.)
+      DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER:-swarraksha}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@db:5432/${POSTGRES_DB:-swarraksha}"
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set in .env}"
+      SWAR_ENV: "${SWAR_ENV:-production}"
+      # Production must be 0: OTPs are delivered by email, never logged.
       SWAR_DEV_MODE: "${SWAR_DEV_MODE:-0}"
       VOICEPRINT_THRESHOLD: "${VOICEPRINT_THRESHOLD:-0.80}"
+      # Forwarded for the API/production-hardening work; the current API
+      # code does not read all of these yet (CORS is still allow-all in
+      # app/main.py on main — see docs/deployment.md).
+      CORS_ORIGINS: "${CORS_ORIGINS:-}"
+      VOICEPRINT_ENC_KEY: "${VOICEPRINT_ENC_KEY:-}"
+      REDIS_URL: "redis://redis:6379/0"
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      SMTP_FROM: "${SMTP_FROM:-}"
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       ml:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    networks: [swarnet]
 
   web:
     build:
       context: ../../apps/web
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+        # Baked into the JS bundle at build time (not a runtime secret).
+        VITE_API_URL: "${VITE_API_URL:-http://localhost:8000}"
+    restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "5173:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    networks: [swarnet]
 
 volumes:
   pgdata:
+  redisdata:
+
+networks:
+  swarnet:

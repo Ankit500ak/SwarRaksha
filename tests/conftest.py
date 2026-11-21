@@ -10,6 +10,11 @@ for p in ("services/ml-inference", "services/voiceprint", "apps/api"):
 _tmp = tempfile.mkdtemp(prefix="swar-test-")
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
 os.environ["SWAR_DEV_MODE"] = "1"
+os.environ["SWAR_ENV"] = "dev"
+# Fixed test-only voiceprint key (base64 of 32 zero-ish bytes — NOT a secret).
+os.environ.setdefault(
+    "VOICEPRINT_ENC_KEY",
+    "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
 
 import numpy as np  # noqa: E402
 import soundfile as sf  # noqa: E402

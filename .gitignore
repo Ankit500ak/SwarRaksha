@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv-ml/
 venv/
 *.egg-info/
 
