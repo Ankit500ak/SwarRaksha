@@ -1,0 +1,422 @@
+{
+  "dataset": {
+    "name": "LibriSpeech test-clean",
+    "url": "https://www.openslr.org/resources/12/test-clean.tar.gz",
+    "speakers": [
+      "1089",
+      "1188"
+    ],
+    "utterances": [
+      {
+        "id": "1089-134686-0000",
+        "speaker": "1089",
+        "duration_sec": 10.44
+      },
+      {
+        "id": "1089-134686-0001",
+        "speaker": "1089",
+        "duration_sec": 3.27
+      },
+      {
+        "id": "1089-134686-0002",
+        "speaker": "1089",
+        "duration_sec": 6.62
+      },
+      {
+        "id": "1089-134686-0003",
+        "speaker": "1089",
+        "duration_sec": 2.68
+      },
+      {
+        "id": "1089-134686-0004",
+        "speaker": "1089",
+        "duration_sec": 5.22
+      },
+      {
+        "id": "1188-133604-0000",
+        "speaker": "1188",
+        "duration_sec": 10.72
+      },
+      {
+        "id": "1188-133604-0001",
+        "speaker": "1188",
+        "duration_sec": 9.04
+      },
+      {
+        "id": "1188-133604-0002",
+        "speaker": "1188",
+        "duration_sec": 17.96
+      },
+      {
+        "id": "1188-133604-0003",
+        "speaker": "1188",
+        "duration_sec": 12.61
+      },
+      {
+        "id": "1188-133604-0004",
+        "speaker": "1188",
+        "duration_sec": 10.65
+      }
+    ]
+  },
+  "speaker_verification": {
+    "ecapa": {
+      "embedding_kind": "ecapa-tdnn-voxceleb-v1",
+      "embedding_dim": 192,
+      "same_speaker_pairs": 20,
+      "same_speaker_cosine_mean": 0.7827,
+      "same_speaker_cosines": [
+        0.7307,
+        0.8257,
+        0.5538,
+        0.7708,
+        0.7041,
+        0.4906,
+        0.72,
+        0.5872,
+        0.6897,
+        0.6445,
+        0.8911,
+        0.8876,
+        0.8963,
+        0.866,
+        0.8925,
+        0.877,
+        0.8441,
+        0.9314,
+        0.9249,
+        0.9268
+      ],
+      "different_speaker_pairs": 25,
+      "different_speaker_cosine_mean": 0.2367,
+      "different_speaker_cosines": [
+        0.2991,
+        0.2577,
+        0.3255,
+        0.2726,
+        0.2637,
+        0.238,
+        0.2329,
+        0.2901,
+        0.2094,
+        0.2263,
+        0.277,
+        0.2591,
+        0.2625,
+        0.2593,
+        0.2394,
+        0.1575,
+        0.1157,
+        0.1634,
+        0.1489,
+        0.1641,
+        0.2404,
+        0.2289,
+        0.3024,
+        0.2382,
+        0.2444
+      ]
+    },
+    "mfcc": {
+      "embedding_kind": "mfcc-stats-v0",
+      "embedding_dim": 44,
+      "same_speaker_pairs": 20,
+      "same_speaker_cosine_mean": 0.9978,
+      "same_speaker_cosines": [
+        0.9986,
+        0.9982,
+        0.994,
+        0.9972,
+        0.9951,
+        0.9927,
+        0.996,
+        0.9951,
+        0.9964,
+        0.9985,
+        0.9996,
+        0.999,
+        0.9991,
+        0.9996,
+        0.9995,
+        0.9997,
+        0.9995,
+        0.9997,
+        0.9995,
+        0.9997
+      ],
+      "different_speaker_pairs": 25,
+      "different_speaker_cosine_mean": 0.9956,
+      "different_speaker_cosines": [
+        0.9966,
+        0.9977,
+        0.9984,
+        0.9978,
+        0.9972,
+        0.9968,
+        0.9971,
+        0.9973,
+        0.9966,
+        0.9963,
+        0.9962,
+        0.997,
+        0.9978,
+        0.997,
+        0.9971,
+        0.9927,
+        0.9924,
+        0.9935,
+        0.9912,
+        0.9922,
+        0.9941,
+        0.9944,
+        0.9955,
+        0.9936,
+        0.9937
+      ]
+    }
+  },
+  "spoof_source": {
+    "kind": "locally synthesised speech (NOT a public spoof corpus)",
+    "tool": "Piper TTS, voice en_US-amy-medium (rhasspy/piper-voices)",
+    "note": "Same transcripts as the bona fide clips, read by a neural TTS voice that is NOT either LibriSpeech speaker. Tests TTS detection only \u2014 not voice conversion/cloning.",
+    "clips": [
+      {
+        "id": "1089-134686-0000-piper",
+        "source_utterance": "1089-134686-0000",
+        "duration_sec": 9.13
+      },
+      {
+        "id": "1089-134686-0001-piper",
+        "source_utterance": "1089-134686-0001",
+        "duration_sec": 2.88
+      },
+      {
+        "id": "1089-134686-0002-piper",
+        "source_utterance": "1089-134686-0002",
+        "duration_sec": 5.87
+      },
+      {
+        "id": "1089-134686-0003-piper",
+        "source_utterance": "1089-134686-0003",
+        "duration_sec": 2.66
+      },
+      {
+        "id": "1089-134686-0004-piper",
+        "source_utterance": "1089-134686-0004",
+        "duration_sec": 4.02
+      },
+      {
+        "id": "1188-133604-0000-piper",
+        "source_utterance": "1188-133604-0000",
+        "duration_sec": 6.71
+      },
+      {
+        "id": "1188-133604-0001-piper",
+        "source_utterance": "1188-133604-0001",
+        "duration_sec": 7.38
+      },
+      {
+        "id": "1188-133604-0002-piper",
+        "source_utterance": "1188-133604-0002",
+        "duration_sec": 14.34
+      },
+      {
+        "id": "1188-133604-0003-piper",
+        "source_utterance": "1188-133604-0003",
+        "duration_sec": 10.67
+      },
+      {
+        "id": "1188-133604-0004-piper",
+        "source_utterance": "1188-133604-0004",
+        "duration_sec": 8.77
+      }
+    ]
+  },
+  "anti_spoofing": {
+    "pretrained_model_version": "pretrained-aasist:clovaai/aasist AASIST.pth (ASVspoof2019-LA)",
+    "pretrained": {
+      "bona_fide": [
+        {
+          "id": "1089-134686-0000",
+          "aggregate_spoof": 0.3376
+        },
+        {
+          "id": "1089-134686-0001",
+          "aggregate_spoof": 0.0002
+        },
+        {
+          "id": "1089-134686-0002",
+          "aggregate_spoof": 0.5001
+        },
+        {
+          "id": "1089-134686-0003",
+          "aggregate_spoof": 0.0
+        },
+        {
+          "id": "1089-134686-0004",
+          "aggregate_spoof": 0.5
+        },
+        {
+          "id": "1188-133604-0000",
+          "aggregate_spoof": 0.0007
+        },
+        {
+          "id": "1188-133604-0001",
+          "aggregate_spoof": 0.007
+        },
+        {
+          "id": "1188-133604-0002",
+          "aggregate_spoof": 0.1824
+        },
+        {
+          "id": "1188-133604-0003",
+          "aggregate_spoof": 0.0194
+        },
+        {
+          "id": "1188-133604-0004",
+          "aggregate_spoof": 0.0294
+        }
+      ],
+      "spoof": [
+        {
+          "id": "1089-134686-0000-piper",
+          "aggregate_spoof": 0.6946
+        },
+        {
+          "id": "1089-134686-0001-piper",
+          "aggregate_spoof": 0.0001
+        },
+        {
+          "id": "1089-134686-0002-piper",
+          "aggregate_spoof": 0.502
+        },
+        {
+          "id": "1089-134686-0003-piper",
+          "aggregate_spoof": 0.0001
+        },
+        {
+          "id": "1089-134686-0004-piper",
+          "aggregate_spoof": 0.0183
+        },
+        {
+          "id": "1188-133604-0000-piper",
+          "aggregate_spoof": 0.2009
+        },
+        {
+          "id": "1188-133604-0001-piper",
+          "aggregate_spoof": 0.4341
+        },
+        {
+          "id": "1188-133604-0002-piper",
+          "aggregate_spoof": 0.7227
+        },
+        {
+          "id": "1188-133604-0003-piper",
+          "aggregate_spoof": 0.66
+        },
+        {
+          "id": "1188-133604-0004-piper",
+          "aggregate_spoof": 0.7697
+        }
+      ],
+      "bona_fide_mean": 0.1577,
+      "spoof_mean": 0.4003,
+      "accuracy_at_0.5": 0.65,
+      "auc_spoof_vs_bona_fide": 0.71,
+      "n_bona_fide_scored": 10,
+      "n_spoof_scored": 10
+    },
+    "heuristic": {
+      "bona_fide": [
+        {
+          "id": "1089-134686-0000",
+          "aggregate_spoof": 0.4048
+        },
+        {
+          "id": "1089-134686-0001",
+          "aggregate_spoof": 0.511
+        },
+        {
+          "id": "1089-134686-0002",
+          "aggregate_spoof": 0.514
+        },
+        {
+          "id": "1089-134686-0003",
+          "aggregate_spoof": 0.3843
+        },
+        {
+          "id": "1089-134686-0004",
+          "aggregate_spoof": 0.3222
+        },
+        {
+          "id": "1188-133604-0000",
+          "aggregate_spoof": 0.4924
+        },
+        {
+          "id": "1188-133604-0001",
+          "aggregate_spoof": 0.4086
+        },
+        {
+          "id": "1188-133604-0002",
+          "aggregate_spoof": 0.3796
+        },
+        {
+          "id": "1188-133604-0003",
+          "aggregate_spoof": 0.5189
+        },
+        {
+          "id": "1188-133604-0004",
+          "aggregate_spoof": 0.3313
+        }
+      ],
+      "spoof": [
+        {
+          "id": "1089-134686-0000-piper",
+          "aggregate_spoof": 0.4891
+        },
+        {
+          "id": "1089-134686-0001-piper",
+          "aggregate_spoof": 0.4944
+        },
+        {
+          "id": "1089-134686-0002-piper",
+          "aggregate_spoof": 0.5353
+        },
+        {
+          "id": "1089-134686-0003-piper",
+          "aggregate_spoof": 0.5788
+        },
+        {
+          "id": "1089-134686-0004-piper",
+          "aggregate_spoof": 0.5383
+        },
+        {
+          "id": "1188-133604-0000-piper",
+          "aggregate_spoof": 0.5617
+        },
+        {
+          "id": "1188-133604-0001-piper",
+          "aggregate_spoof": 0.5346
+        },
+        {
+          "id": "1188-133604-0002-piper",
+          "aggregate_spoof": 0.5311
+        },
+        {
+          "id": "1188-133604-0003-piper",
+          "aggregate_spoof": 0.494
+        },
+        {
+          "id": "1188-133604-0004-piper",
+          "aggregate_spoof": 0.5087
+        }
+      ],
+      "bona_fide_mean": 0.4267,
+      "spoof_mean": 0.5266,
+      "accuracy_at_0.5": 0.7,
+      "auc_spoof_vs_bona_fide": 0.87,
+      "n_bona_fide_scored": 10,
+      "n_spoof_scored": 10
+    }
+  }
+}
