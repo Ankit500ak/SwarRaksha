@@ -30,6 +30,17 @@ export const STR: Record<string, Record<Lang, string>> = {
   analysing: { en: "Listening carefully…", hi: "ध्यान से सुन रहे हैं…" },
   report: { en: "Report this attempt", hi: "इस कोशिश की रिपोर्ट करें" },
   riskMeter: { en: "Risk", hi: "खतरा" },
+  privacy: { en: "Privacy Policy", hi: "गोपनीयता नीति" },
+  terms: { en: "Terms of Use", hi: "उपयोग की शर्तें" },
+  back: { en: "Back", hi: "वापस" },
+  yourData: { en: "Your data", hi: "आपका डेटा" },
+  downloadData: { en: "Download my data", hi: "मेरा डेटा डाउनलोड करें" },
+  deleteAccount: { en: "Delete my account", hi: "मेरा खाता हटाएँ" },
+  deleteAccountConfirm: {
+    en: "This permanently deletes your account, voiceprints, checks and alerts. Click again to confirm — this cannot be undone.",
+    hi: "इससे आपका खाता, वॉइसप्रिंट, जाँचें और अलर्ट हमेशा के लिए हट जाएँगे। पुष्टि के लिए फिर से क्लिक करें — यह वापस नहीं होगा।",
+  },
+  downloadStarted: { en: "Your data download has started.", hi: "आपका डेटा डाउनलोड शुरू हो गया है।" },
 };
 
 export function t(key: string, lang: Lang): string {

@@ -30,6 +30,7 @@ async function req(path: string, opts: RequestInit = {}): Promise<any> {
     try { detail = (await res.json()).detail || detail; } catch { /* ignore */ }
     throw new Error(detail);
   }
+  if (res.status === 204) return {};
   return res.json();
 }
 
@@ -40,6 +41,11 @@ export const api = {
   me: () => req("/me"),
   updateMe: (patch: { name?: string; language?: string }) =>
     req("/me", { method: "PATCH", body: JSON.stringify(patch) }),
+  // Data rights (PLAN §7/§9): export everything stored about the user,
+  // and permanently delete the account. Wired to the agreed API paths;
+  // the API implementation lands with the API lane.
+  exportMe: (): Promise<any> => req("/me/export"),
+  deleteMe: () => req("/me", { method: "DELETE" }),
   alerts: (): Promise<AlertItem[]> => req("/me/alerts"),
   markAlertRead: (id: number) => req(`/me/alerts/${id}/read`, { method: "POST" }),
 
