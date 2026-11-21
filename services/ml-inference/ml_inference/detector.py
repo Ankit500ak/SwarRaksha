@@ -1,15 +1,26 @@
-"""SwarRaksha baseline anti-spoofing detector (v0 heuristic).
+"""SwarRaksha anti-spoofing detector — backend dispatcher + heuristic.
 
-WHAT THIS IS: an UNTRAINED, rule-based scorer over interpretable acoustic
-features (pitch monotony, spectral flux, energy dynamics, spectral
-flatness, harmonic-to-noise ratio). It exists to wire the full product
-pipeline end-to-end and to be replaced by a trained model (AASIST-class,
-PLAN.md Section 6.1) once the eval harness and datasets land.
+Two backends behind the same ``analyze`` / ``score_window`` interface,
+selected by ``SWAR_SPOOF_BACKEND`` (read at call time):
 
-WHAT THIS IS NOT: a validated deepfake detector. No benchmark accuracy
-is claimed anywhere. See MODEL_CARD.md.
+- ``heuristic`` (default): the UNTRAINED, rule-based scorer below over
+  interpretable acoustic features (pitch monotony, spectral flux,
+  energy dynamics, spectral flatness). It wires the pipeline end-to-end.
+  It is NOT a validated deepfake detector; no benchmark accuracy is
+  claimed for it. See MODEL_CARD.md.
+- ``pretrained``: a genuinely pretrained anti-spoofing model
+  (``pretrained_detector.py``; default = AASIST with official
+  ASVspoof 2019 LA weights, HF wav2vec2 checkpoints selectable —
+  selection rationale there). Requires the heavy deps
+  in ``requirements-ml.txt``. If that backend is selected but its deps
+  or checkpoint cannot load, the call raises — it never silently falls
+  back to the heuristic while reporting the pretrained version (or
+  vice versa). ``model_version`` in every result names the backend
+  that actually scored the audio.
 """
 from __future__ import annotations
+
+import os
 
 import numpy as np
 
@@ -17,6 +28,25 @@ from .features import window_features
 
 WINDOW_SEC = 4.0
 MODEL_VERSION = "baseline-heuristic-v0"
+BACKEND_ENV = "SWAR_SPOOF_BACKEND"
+DEFAULT_BACKEND = "heuristic"
+
+
+def backend_name() -> str:
+    name = os.environ.get(BACKEND_ENV, DEFAULT_BACKEND).strip().lower()
+    if name not in ("heuristic", "pretrained"):
+        raise ValueError(
+            f"unknown {BACKEND_ENV}={name!r}; expected 'heuristic' or 'pretrained'")
+    return name
+
+
+def active_model_version() -> str:
+    """Model version string for the currently selected backend."""
+    if backend_name() == "pretrained":
+        from .pretrained_detector import MODEL_VERSION as pretrained_version
+
+        return pretrained_version
+    return MODEL_VERSION
 
 # Sub-score weights (documented in MODEL_CARD.md).
 WEIGHTS = {
@@ -58,6 +88,15 @@ def _subscores(f: dict) -> dict:
 
 
 def score_window(samples: np.ndarray, sr: int) -> dict:
+    """Score one window with the selected backend (see module docstring)."""
+    if backend_name() == "pretrained":
+        from .pretrained_detector import score_window as _pretrained_score
+
+        return _pretrained_score(samples, sr)
+    return _score_window_heuristic(samples, sr)
+
+
+def _score_window_heuristic(samples: np.ndarray, sr: int) -> dict:
     """Score one window. Windows with little voiced speech return
     score=None so fusion can ignore them instead of guessing."""
     f = window_features(samples, sr)
@@ -79,11 +118,15 @@ def score_window(samples: np.ndarray, sr: int) -> dict:
 
 
 def analyze(samples: np.ndarray, sr: int) -> dict:
-    """Split audio into 4 s windows, score each, aggregate."""
+    """Split audio into 4 s windows, score each, aggregate.
+
+    ``model_version`` reports the backend that actually ran (heuristic
+    version string, or the pretrained checkpoint name)."""
+    version = active_model_version()
     win = int(WINDOW_SEC * sr)
     windows = []
     if len(samples) == 0:
-        return {"model_version": MODEL_VERSION, "windows": [],
+        return {"model_version": version, "windows": [],
                 "aggregate_spoof": None, "speech_windows": 0}
     for i, start in enumerate(range(0, len(samples), win)):
         chunk = samples[start:start + win]
@@ -100,7 +143,7 @@ def analyze(samples: np.ndarray, sr: int) -> dict:
     scored = [w["spoof_score"] for w in windows if w["spoof_score"] is not None]
     aggregate = round(float(np.mean(scored)), 4) if scored else None
     return {
-        "model_version": MODEL_VERSION,
+        "model_version": version,
         "windows": windows,
         "aggregate_spoof": aggregate,
         "speech_windows": len(scored),

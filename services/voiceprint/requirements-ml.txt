@@ -1,0 +1,16 @@
+# Heavy ML dependencies for the PRETRAINED ECAPA-TDNN voiceprint
+# backend (SWAR_VOICEPRINT_BACKEND=ecapa). These are deliberately NOT
+# in requirements.txt: the base API must boot and run the MFCC backend
+# without torch. Install into the dedicated ML venv, e.g.:
+#
+#   python3 -m venv .venv-ml
+#   .venv-ml/bin/pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+#   .venv-ml/bin/pip install -r services/voiceprint/requirements.txt \
+#                            -r services/voiceprint/requirements-ml.txt
+#
+# Verified 2026-11-12 on this repo's dev VM (Python 3.12, CPU-only):
+# torch 2.15.0+cpu, torchaudio 2.11.1+cpu, speechbrain 1.1.2.
+-r requirements.txt
+torch
+torchaudio
+speechbrain>=1.0
