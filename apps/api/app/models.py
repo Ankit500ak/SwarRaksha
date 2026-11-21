@@ -26,10 +26,25 @@ class OtpCode(Base):
     __tablename__ = "otp_codes"
     id = Column(Integer, primary_key=True)
     email = Column(String, index=True, nullable=False)
+    # Salted HMAC hash, format "v2:<salt_hex>:<hmac_hex>". Legacy rows may
+    # hold a bare sha256 hex digest; verify accepts both (see auth.py).
     code_hash = Column(String, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     used = Column(Boolean, default=False)
+    attempts = Column(Integer, default=0, nullable=False)
+    request_ip = Column(String, nullable=True)
     created_at = Column(DateTime, default=utcnow)
+
+
+class AuditLog(Base):
+    """PLAN.md §8 audit_log. actor_id is a plain integer (no FK) so the
+    record survives account deletion. Never store audio/embeddings here."""
+    __tablename__ = "audit_log"
+    id = Column(Integer, primary_key=True)
+    actor_id = Column(Integer, nullable=True)
+    action = Column(String, nullable=False)
+    target = Column(String, default="")
+    at = Column(DateTime, default=utcnow)
 
 
 class Circle(Base):
@@ -59,8 +74,9 @@ class Voiceprint(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     label = Column(String, nullable=False)  # e.g. "Son — Rohan"
-    # PRODUCTION TODO (PLAN.md S.11): encrypt at rest. Local build stores
-    # the raw float blob — see MODEL_CARD.md.
+    # Encrypted at rest (app/encryption.py, versioned "v1:"/"v1h:"
+    # prefix). Legacy rows written before encryption shipped hold plain
+    # float blobs and are read back transparently.
     embedding = Column(LargeBinary, nullable=False)
     embedding_kind = Column(String, nullable=False)
     sample_count = Column(Integer, default=3)

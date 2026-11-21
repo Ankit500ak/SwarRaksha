@@ -6,10 +6,11 @@ from sqlalchemy.orm import Session
 from ml_inference import load_audio
 from voiceprint import enroll, to_bytes, EMBEDDING_KIND
 
-from .. import models
+from .. import audit, models
 from ..auth import get_current_user
-from ..config import MAX_UPLOAD_BYTES
 from ..db import get_db
+from ..encryption import encrypt_embedding
+from ..uploads import validate_audio
 
 router = APIRouter(prefix="/voiceprints", tags=["voiceprints"])
 
@@ -36,8 +37,7 @@ async def create_voiceprint(label: str = Form(...),
     arrays = []
     for s in samples:
         data = await s.read()
-        if len(data) > MAX_UPLOAD_BYTES:
-            raise HTTPException(413, "Sample too large")
+        validate_audio(data, s.filename)
         try:
             arr, sr = load_audio(data, s.filename or "sample.wav")
         except Exception:
@@ -47,11 +47,13 @@ async def create_voiceprint(label: str = Form(...),
         arrays.append(arr)
     vec = enroll(arrays, sr)
     vp = models.Voiceprint(user_id=user.id, label=label,
-                           embedding=to_bytes(vec), embedding_kind=EMBEDDING_KIND,
+                           embedding=encrypt_embedding(to_bytes(vec)),
+                           embedding_kind=EMBEDDING_KIND,
                            sample_count=3)
     db.add(vp)
     db.commit()
     db.refresh(vp)
+    audit.write_audit(db, user.id, "voiceprint_create", f"voiceprint:{vp.id}")
     return _public(vp)
 
 
@@ -72,4 +74,5 @@ def delete_voiceprint(vp_id: int, user: models.User = Depends(get_current_user),
         raise HTTPException(404, "Voiceprint not found")
     db.delete(vp)
     db.commit()
+    audit.write_audit(db, user.id, "voiceprint_delete", f"voiceprint:{vp_id}")
     return {"ok": True}

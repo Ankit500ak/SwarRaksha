@@ -7,3 +7,7 @@ pydantic
 numpy
 scipy
 soundfile
+# Voiceprint AES-256-GCM encryption at rest (app/encryption.py).
+# Without it the API falls back to a documented stdlib interim
+# construction; production should always install this.
+cryptography

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from .. import auth, models
+from .. import audit, auth
 from ..db import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -21,10 +21,11 @@ class VerifyOtp(BaseModel):
 
 
 @router.post("/request-otp")
-def request_otp(body: RequestOtp, db: Session = Depends(get_db)):
+def request_otp(body: RequestOtp, request: Request, db: Session = Depends(get_db)):
     if "@" not in body.email:
         return {"ok": False, "detail": "Invalid email"}
-    auth.request_otp(db, body.email)
+    ip = request.client.host if request.client else None
+    auth.request_otp(db, body.email, ip=ip)
     # The code itself is delivered out-of-band (email in production,
     # server log in DEV_MODE). It is never part of this response.
     return {"ok": True, "detail": "Code sent"}
@@ -36,6 +37,7 @@ def verify_otp(body: VerifyOtp, db: Session = Depends(get_db)):
     if body.name and not user.name:
         user.name = body.name
         db.commit()
+    audit.write_audit(db, user.id, "login", f"user:{user.id}")
     return {"ok": True, "token": auth.make_token(user),
             "user": {"id": user.id, "email": user.email, "name": user.name,
                      "language": user.language}}
